@@ -67,6 +67,18 @@ func It(title string, lines ...Fallible) Element {
 	return element
 }
 
+func Inline(line Fallible) Element {
+	return It("inline", line)
+}
+
+func Let[T any](variable Variable[T], cache func() T) Element {
+	return BeforeEach(func() { variable.ClearCache(cache) })
+}
+
+func Var[T any](def T) Variable[T] {
+	return new(variable[T]).init(func() T { return def })
+}
+
 func enriches(title string, err error) error {
 	if err == nil {
 		return nil

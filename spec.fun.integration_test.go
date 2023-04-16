@@ -6,6 +6,9 @@ import (
 )
 
 func TestSpecFunIntegrationSuite(t *testing.T) {
+	err := Var[error](nil)
+	panic3 := Var("panic 3")
+
 	expected := []string{
 		"fun integration suite: before all: recovered from: panic 1",
 		"fun integration suite: before all: recovered from: panic 2",
@@ -29,6 +32,11 @@ func TestSpecFunIntegrationSuite(t *testing.T) {
 		"before each: recovered from: panic 8",
 		"after each: recovered from: panic 10",
 		"after each: recovered from: panic 9",
+		"before each: recovered from: panic 7",
+		"before each: recovered from: panic 8",
+		"fun integration suite: first context: context with tests: let over let: inline: overlap",
+		"after each: recovered from: panic 10",
+		"after each: recovered from: panic 9",
 		"fun integration suite: after all: recovered from: panic 3",
 		"fun integration suite: after all: recovered from: panic 4",
 	}
@@ -40,10 +48,12 @@ func TestSpecFunIntegrationSuite(t *testing.T) {
 			"fun integration suite",
 
 			BeforeAll(func() { panic("panic 1") }, func() { panic("panic 2") }),
-			AfterAll(func() { panic("panic 3") }, func() { panic("panic 4") }),
+			AfterAll(func() { panic(panic3.Value()) }, func() { panic("panic 4") }),
 
 			Describe(
 				"first context",
+
+				Let(err, func() error { return fmt.Errorf("err 1") }),
 
 				Describe(
 					"context without tests",
@@ -62,7 +72,7 @@ func TestSpecFunIntegrationSuite(t *testing.T) {
 
 					It(
 						"test 1",
-						func() error { return fmt.Errorf("err 1") },
+						func() error { return err.Value() },
 						func() error { return fmt.Errorf("err 2") },
 					),
 
@@ -79,6 +89,14 @@ func TestSpecFunIntegrationSuite(t *testing.T) {
 					It(
 						"test 4",
 					),
+
+					Describe(
+						"let over let",
+
+						Let(err, func() error { return fmt.Errorf("overlap") }),
+
+						Inline(err.Value),
+					),
 				),
 			),
 		),
@@ -88,7 +106,7 @@ func TestSpecFunIntegrationSuite(t *testing.T) {
 	for index := range expected {
 		if expected[index] != received[index] {
 			t.Error("expected:", expected[index])
-			t.Error("received:", expected[index])
+			t.Error("received:", received[index])
 			t.Error("index:", index)
 			t.Fail()
 		}
