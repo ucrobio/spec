@@ -1,7 +1,10 @@
 package spec
 
+import "fmt"
+
 type (
 	Engine interface {
+		context(title string) Engine
 		run(handler Handler, hooks []Hook)
 		len() int
 	}
@@ -31,20 +34,20 @@ func (it engine) run(handler Handler, hooks []Hook) {
 	for _, hook := range it.hooks {
 		switch {
 		case hook.isBeforeAll():
-			hook.run(handler)
+			hook.context(it.title).run(handler)
 		case hook.isAfterAll():
-			defer hook.run(handler)
+			defer hook.context(it.title).run(handler)
 		default:
 			hooks = append(hooks, hook)
 		}
 	}
 
 	for _, test := range it.tests {
-		test.run(handler, hooks)
+		test.context(it.title).run(handler, hooks)
 	}
 
 	for _, engine := range it.engines {
-		engine.run(handler, hooks)
+		engine.context(it.title).run(handler, hooks)
 	}
 }
 
@@ -58,4 +61,10 @@ func (it engine) len() (ret int) {
 	}
 
 	return ret
+}
+
+func (it engine) context(title string) Engine {
+	it.title = fmt.Sprintf("%s: %s", title, it.title)
+
+	return it
 }

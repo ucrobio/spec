@@ -1,5 +1,7 @@
 package spec
 
+import "fmt"
+
 func Run(engine Engine, handler Handler) {
 	engine.run(handler, []Hook{})
 }
@@ -27,7 +29,7 @@ func Describe(title string, body ...Element) Element {
 	element := new(element).init()
 	element.engine = new(engine).init(title, hooks, tests, engines)
 
-	return nil
+	return element
 }
 
 func BeforeAll(lines ...Evaluable) Element {
@@ -63,4 +65,12 @@ func It(title string, lines ...Fallible) Element {
 	element.test = new(test).init(title, lines)
 
 	return element
+}
+
+func enriches(title string, err error) error {
+	if err == nil {
+		return nil
+	}
+
+	return fmt.Errorf("%s: %w", title, err)
 }

@@ -1,9 +1,12 @@
 package spec
 
+import "fmt"
+
 type (
 	Test interface {
 		len() int
 		run(handler Handler, hooks []Hook)
+		context(title string) Test
 	}
 
 	test struct {
@@ -25,7 +28,7 @@ func (it test) len() int {
 
 func (it test) run(handler Handler, hooks []Hook) {
 	if it.len() <= 0 {
-		return
+		handler.Call(enriches(it.title, fmt.Errorf("empty test")))
 	}
 
 	for _, hook := range hooks {
@@ -38,6 +41,12 @@ func (it test) run(handler Handler, hooks []Hook) {
 	}
 
 	for _, line := range it.lines {
-		handler.Call(line.Call())
+		handler.Call(enriches(it.title, line.Call()))
 	}
+}
+
+func (it test) context(title string) Test {
+	it.title = fmt.Sprintf("%s: %s", title, it.title)
+
+	return it
 }
